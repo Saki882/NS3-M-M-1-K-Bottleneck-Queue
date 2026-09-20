@@ -44,7 +44,7 @@ The objectives are to calculate the average queueing length, packet loss probabi
 | Service rate (μ)         |   625 packets/s |
 | Arrival rate (λ)         | 562.5 packets/s |
 
-![Simulation Parameters](results/parameters.png)
+![Simulation Parameters](Results/parameters.png)
 
 > **Note:** K = 50 represents the total number of packets in the system (waiting + one in service). Therefore, the NS-3 device queue is configured for 49 waiting packets.
 
