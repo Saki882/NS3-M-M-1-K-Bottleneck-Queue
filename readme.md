@@ -92,7 +92,7 @@ The simulation supports parameters such as `--simTime`, `--warmup`, `--run`, `--
 
 ## Results
 
-![Results Comparison](results/results-comparison.png)
+![Results Comparison](Results/results-comparison.png)
 
 The 3000-second simulation produced results close to the analytical M/M/1/K values.
 
