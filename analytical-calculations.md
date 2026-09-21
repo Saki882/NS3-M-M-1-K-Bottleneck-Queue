@@ -23,8 +23,8 @@ This project implements an **M/M/1/K bottleneck queue** in NS-3 and compares the
 
 ## Project Files
 
-* [`poisson-bottleneck.cc`](poisson-bottleneck.cc) — NS-3 simulation code
-* [`analytical-calculations.md`](analytical-calculations.md) — Analytical calculations
+* [`poisson-bottleneck.cpp`](./poisson-bottleneck.cpp) — NS-3 simulation code
+* [`analytical-calculations.md`](./analytical-calculations.md) — Analytical calculations
 * `results/` — Simulation parameters and results
 
 ## Simulation Parameters
