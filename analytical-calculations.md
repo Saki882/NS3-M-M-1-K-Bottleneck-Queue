@@ -29,11 +29,11 @@ This project implements an **M/M/1/K bottleneck queue** in NS-3 and compares the
 
 ## Simulation Parameters
 
-![Simulation Parameters](results/parameters.png)
+![Simulation Parameters](Results/parameters.png)
 
 ## Results Comparison
 
-![Results Comparison](results/results-comparison.png)
+![Results Comparison](Results/results-comparison.png)
 
 ## Run the Simulation
 
