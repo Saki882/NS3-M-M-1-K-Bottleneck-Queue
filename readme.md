@@ -108,7 +108,7 @@ Full derivations are in [`analytical-calculations.md`](analytical-calculations.m
 
 ## 5. Simulation Design
 
-The simulation is written in C++ against the NS-3 API and is located in [`poisson-bottleneck.cc`](poisson-bottleneck.cc).
+The simulation is written in C++ against the NS-3 API and is located in [`poisson-bottleneck.cpp`](poisson-bottleneck.cpp).
 
 **Topology.** Two nodes are connected by a single `PointToPointNetDevice` link. The sending device uses a `DropTailQueue` limited to K − 1 packets. Node 0 generates traffic and Node 1 receives it.
 
@@ -169,7 +169,7 @@ Example with a different load and an independent replication:
 
 The program first prints the configuration it is running with:
 
-![Simulation parameters as printed by the program](results/parameters.png)
+![Simulation parameters as printed by the program](Results/parameters.png)
 
 ---
 
@@ -181,7 +181,7 @@ The 2950 s measurement window (after the 50 s warm-up) produced results that clo
 
 The program then prints the packet counts and the simulation-versus-analytical comparison:
 
-![Packet counts and M/M/1/K results comparison from the terminal](results/results-comparison.png)
+![Packet counts and M/M/1/K results comparison from the terminal](Results/results-comparison.png)
 
 ### Summary Table
 
@@ -261,7 +261,7 @@ The program then prints the packet counts and the simulation-versus-analytical c
 ## 13. Author
 
 **Saqib Hussain**
-BS Information Technology, Ghazi University, Dera Ghazi Khan, Pakistan
+BS Information Technology, Ghazi University, Dera Ghazi Khan, Pakistan,
 Research interests: wireless and mobile networks (5G/6G, IoT), network performance modelling with NS-3, protocol optimisation, dynamic resource allocation
 
 - GitHub: [@Saki882](https://github.com/Saki882)
