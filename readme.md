@@ -1,132 +1,264 @@
-﻿# NS-3 Bottleneck Queue Simulation (M/M/1/K)
+# NS-3 Bottleneck Queue Simulation: M/M/1/K Validation
 
-An NS-3 simulation of a single bottleneck link with **Poisson arrivals** and **exponentially distributed packet sizes**, compared with the analytical **M/M/1/K** queueing model.
+An NS-3 simulation of a finite-buffer bottleneck link driven by Poisson arrivals and exponentially distributed packet sizes. The simulated queue occupancy, loss, and waiting-time statistics are validated against the closed-form **M/M/1/K** queueing model.
 
-## Summary
+---
 
-Two nodes are connected by a 1 Mbps bottleneck link with a system capacity of 50 packets and link utilisation of 0.9. The analytical results are compared with NS-3 simulation results.
+## 1. Problem Statement
 
-| Metric                    |      Analytical | NS-3 Simulation |
-| ------------------------- | --------------: | --------------: |
-| Average packets in system |      **8.7623** |          8.7321 |
-| Average waiting packets   |      **7.8628** |          7.8328 |
-| Packet loss probability   | **5.18 × 10⁻⁴** |     4.91 × 10⁻⁴ |
-| P(system occupancy > 20)  |      **0.1053** |          0.1030 |
-| P(waiting packets > 20)   |      **0.0943** |          0.0921 |
+Two nodes are connected by a point-to-point link that acts as a bottleneck. Packets arrive at the sending node according to a Poisson process, and their sizes are exponentially distributed with a mean of 200 bytes. The link has the following characteristics:
 
-The simulation results are close to the analytical results. The simulation also includes PASTA and Little's Law consistency checks.
+- **Capacity:** 1 Mbps
+- **Propagation delay:** 0.1 ms
+- **Buffer size:** 50 packets (the total number of packets in the system, including the one being transmitted)
+- **Link utilisation:** ρ = 0.9
 
-## Problem Statement
+Because the buffer is finite, some arriving packets are dropped when the buffer is full. The analysis focuses on the following questions:
 
-Two nodes are connected with a link having:
+1. What is the average number of packets in the system and the average number waiting in the queue?
+2. What is the probability that an arriving packet is dropped?
+3. What is the probability that the system holds more than 20 packets, and that more than 20 packets are waiting?
 
-* Capacity: 1 Mbps
-* Propagation delay: 0.1 ms
-* System capacity: 50 packets
-* Poisson packet arrivals
-* Exponential packet-size distribution
-* Mean packet size: 200 Bytes
-* Link utilisation: 0.9
+The analytical answers are obtained from the M/M/1/K model. They are then verified with an independent NS-3 discrete-event simulation.
 
-The objectives are to calculate the average queueing length, packet loss probability, and probability of occupancy greater than 20 packets, and then verify the analytical results using NS-3.
+---
 
-## Parameters
+## 2. System Model
 
-| Parameter                |           Value |
-| ------------------------ | --------------: |
-| Link capacity            |          1 Mbps |
-| Propagation delay        |          0.1 ms |
-| System capacity (K)      |      50 packets |
-| Mean packet size         |       200 Bytes |
-| Packet size distribution |     Exponential |
-| Arrival process          |         Poisson |
-| Link utilisation (ρ)     |             0.9 |
-| Service rate (μ)         |   625 packets/s |
-| Arrival rate (λ)         | 562.5 packets/s |
-
-![Simulation Parameters](Results/parameters.png)
-
-> **Note:** K = 50 represents the total number of packets in the system (waiting + one in service). Therefore, the NS-3 device queue is configured for 49 waiting packets.
-
-## Analytical Solution
-
-The system is modeled as an **M/M/1/K** finite-capacity queue with ρ = λ/μ = 0.9 and K = 50.
-
-The analytical calculations for:
-
-* Average packets in the system
-* Average waiting packets
-* Packet loss probability
-* P(system occupancy > 20)
-* P(waiting packets > 20)
-
-are provided in [`analytical-calculations.md`](analytical-calculations.md).
-
-## NS-3 Implementation
-
-The simulation uses two nodes connected through a point-to-point bottleneck link.
-
-The implementation uses:
-
-* Poisson arrival process
-* Exponentially distributed packet sizes
-* 1 Mbps link capacity
-* 0.1 ms propagation delay
-* 49-packet device queue + 1 packet in service
-* 50-second warm-up period
-* Time-weighted queue occupancy measurements
-
-PASTA is used to compare the probability seen by arriving packets with the time-average occupancy.
-
-## How to Run
-
-Place `poisson-bottleneck.cc` in the `scratch/` directory of your NS-3 installation.
-
-```bash
-cd ~/ns-3-dev
-./ns3 build
-./ns3 run scratch/poisson-bottleneck
+```
+ Poisson arrivals (λ)          Bottleneck link (μ, K = 50)
+ ────────────────────►  [ queue (49 waiting) | server ]  ────► Node 1
+                         ◄──── drop if full ────┘
 ```
 
-The simulation supports parameters such as `--simTime`, `--warmup`, `--run`, `--K`, and `--rho`.
+Each packet is treated as a customer in an M/M/1/K queue:
 
-## Results
+| Queueing component | Realisation in this project                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| **M** (arrivals)   | Poisson process: exponential inter-arrival times                                                       |
+| **M** (service)    | Exponentially distributed packet sizes, which give exponential transmission times on a fixed-rate link |
+| **1** (server)     | One transmitter on the bottleneck link                                                                 |
+| **K** (capacity)   | 50 packets in total: 49 waiting in the device queue and 1 in service                                   |
 
-![Results Comparison](Results/results-comparison.png)
+---
 
-The 3000-second simulation produced results close to the analytical M/M/1/K values.
+## 3. Parameters
 
-| Metric                    |  Analytical |  Simulation | Difference |
-| ------------------------- | ----------: | ----------: | ---------: |
-| Average packets in system |      8.7623 |      8.7321 |      −0.3% |
-| Average waiting packets   |      7.8628 |      7.8328 |      −0.4% |
-| Packet loss probability   | 5.18 × 10⁻⁴ | 4.91 × 10⁻⁴ |      −5.2% |
-| P(system occupancy > 20)  |      0.1053 |      0.1030 |      −2.1% |
-| P(waiting packets > 20)   |      0.0943 |      0.0921 |      −2.4% |
+| Parameter                | Symbol            | Value                                            |
+| ------------------------ | ----------------- | ------------------------------------------------ |
+| Link capacity            | C                 | 1 Mbps                                           |
+| Propagation delay        | d                 | 0.1 ms                                           |
+| System capacity          | K                 | 50 packets (49 waiting + 1 in service)           |
+| Mean packet size         | 1/μ (in bytes)    | 200 bytes                                        |
+| Packet size distribution |                   | Exponential                                      |
+| Arrival process          |                   | Poisson                                          |
+| Service rate             | μ = C / (8 · 200) | 625 packets/s                                    |
+| Arrival rate             | λ = ρ · μ         | 562.5 packets/s                                  |
+| Offered load             | ρ = λ / μ         | 0.9                                              |
+| Simulated time           |                   | 3000 s (50 s warm-up discarded, 2950 s measured) |
+| RNG seed / run           |                   | 12345 / run 1                                    |
 
-The difference in packet loss probability is larger because packet loss is a relatively rare event and therefore has greater statistical variation in a single simulation run.
+![Simulation parameters as printed by the program](results/parameters.png)
 
-## Project Files
+> **Note on K:** K = 50 counts every packet in the system. The NS-3 device queue is therefore configured for K − 1 = 49 waiting packets, because the packet being transmitted has already been removed from the queue.
+
+> **Note on ρ:** ρ = λ/μ is the _offered_ load. The _carried_ load is ρ(1 − p_K) because some packets are dropped. The measured utilisation is therefore slightly below 0.9 (see [Section 8](#8-validation-checks)).
+
+---
+
+## 4. Analytical Solution
+
+For an M/M/1/K queue with ρ ≠ 1, the steady-state probability of n packets in the system is
+
+$$
+p_n = \frac{(1-\rho)\,\rho^{n}}{1-\rho^{K+1}}, \qquad 0 \le n \le K
+$$
+
+From these probabilities the following metrics are derived:
+
+| Metric                             | Formula                                           |
+| ---------------------------------- | ------------------------------------------------- |
+| Average packets in system          | $L = \sum_{n=0}^{K} n\,p_n$                       |
+| Average packets waiting            | $L_q = \sum_{n=1}^{K} (n-1)\,p_n = L - (1 - p_0)$ |
+| Packet loss probability (blocking) | $P_{\text{loss}} = p_K$                           |
+| P(system occupancy > 20)           | $\sum_{n=21}^{K} p_n$                             |
+| P(waiting packets > 20)            | $\sum_{n=22}^{K} p_n$                             |
+
+Substituting ρ = 0.9 and K = 50 gives the analytical values reported in [Section 7](#7-results).
+
+Full derivations are in [`analytical-calculations.md`](analytical-calculations.md).
+
+---
+
+## 5. Simulation Design
+
+The simulation is written in C++ against the NS-3 API and is located in [`poisson-bottleneck.cc`](poisson-bottleneck.cc).
+
+**Topology.** Two nodes are connected by a single `PointToPointNetDevice` link. The sending device uses a `DropTailQueue` limited to K − 1 packets. Node 0 generates traffic and Node 1 receives it.
+
+**Traffic generation.**
+
+- Inter-arrival times are drawn from an exponential distribution with mean 1/λ, which produces a Poisson arrival process.
+- Packet sizes are drawn from an exponential distribution with mean 200 bytes. The on-wire size includes the 2-byte PPP header.
+
+**Measurement.**
+
+- **Time-weighted occupancy.** The time spent in each state n is accumulated whenever the number in system changes. This gives time-average probabilities.
+- **Loss.** Drops are counted at the moment a packet is refused by the full queue.
+- **Warm-up.** The first 50 s are discarded so that the statistics reflect steady state.
+
+**PASTA.** Because arrivals are Poisson, the Poisson Arrivals See Time Averages property implies that the distribution seen by arriving packets equals the time-average distribution. The program records what each arrival sees and compares the two.
+
+**Little's Law.** The program checks that L − L_q equals the effective utilisation.
+
+---
+
+## 6. Running the Simulation
+
+### Requirements
+
+- NS-3 (ns-3-dev recommended)
+- A C++17-capable compiler
+- Linux or macOS (tested on Ubuntu)
+
+### Steps
+
+```bash
+# 1. Copy the simulation into the NS-3 scratch directory
+cp poisson-bottleneck.cc ~/ns-3-dev/scratch/
+
+# 2. Build NS-3
+cd ~/ns-3-dev
+./ns3 build
+
+# 3. Run the default experiment (K = 50, ρ = 0.9)
+./ns3 run scratch/poisson-bottleneck.cc
+```
+
+### Command-Line Options
+
+| Option      | Default | Description                                  |
+| ----------- | ------- | -------------------------------------------- |
+| `--K`       | 50      | Maximum packets in system (queue + server)   |
+| `--rho`     | 0.9     | Offered load ρ = λ/μ                         |
+| `--simTime` | 3000    | Total simulated time (s)                     |
+| `--warmup`  | 50      | Warm-up period to discard (s)                |
+| `--run`     | 1       | RNG run number, for independent replications |
+
+Example with a different load and an independent replication:
+
+```bash
+./ns3 run "scratch/poisson-bottleneck.cc --rho=0.8 --run=2"
+```
+
+### Expected Output
+
+```
+ Service rate (mu)        : 625.000000 packets/sec
+ Arrival rate (lambda)    : 562.500000 packets/sec
+ Utilisation (rho)        : 0.900000
+ System capacity (K)      : 50 packets
+ Mean packet size         : 200.000000 Bytes
+ Link rate                : 1.000000 Mbps
+ Link delay               : 0.1ms
+ ...
+ M/M/1/K RESULTS COMPARISON
+ Avg packets in system (queue + server)   8.732076   8.762339
+ Avg queue length (waiting packets)       7.832786   7.862805
+ Packet loss probability                  0.000491   0.000518
+ P(N > 20)  [packets in system]           0.103045   0.105269
+ P(Nq > 20) [waiting packets]             0.092050   0.094276
+```
+
+The left column is the NS-3 simulation and the right column is the analytical M/M/1/K result.
+
+---
+
+## 7. Results
+
+The 2950 s measurement window (after the 50 s warm-up) produced results that closely match the analytical M/M/1/K values.
+
+![Analytical vs. simulation results](results/results-comparison.png)
+
+| Metric                       |  Analytical | NS-3 Simulation | Relative Difference |
+| ---------------------------- | ----------: | --------------: | ------------------: |
+| Average packets in system, L |      8.7623 |          8.7321 |               −0.3% |
+| Average packets waiting, L_q |      7.8628 |          7.8328 |               −0.4% |
+| Packet loss probability, p_K | 5.18 × 10⁻⁴ |     4.91 × 10⁻⁴ |               −5.2% |
+| P(system occupancy > 20)     |      0.1053 |          0.1030 |               −2.1% |
+| P(waiting packets > 20)      |      0.0943 |          0.0921 |               −2.4% |
+
+**Packet counts (measurement window):**
+
+| Quantity             |                     Value |
+| -------------------- | ------------------------: |
+| Packets offered      |                 1,658,802 |
+| Packets accepted     |                 1,657,988 |
+| Packets dropped      |                       814 |
+| Measured utilisation | 0.89929 (theory: 0.89953) |
+
+---
+
+## 8. Validation Checks
+
+| Check                              | Result                                                     | Interpretation                                                                                  |
+| ---------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Occupancy vs. analytical model** | All five metrics agree within 5%                           | The simulation reproduces the M/M/1/K model.                                                    |
+| **PASTA**                          | P(arrival sees N > 20) = 0.102848; time average = 0.103045 | Arrivals see the same distribution as the time average, as PASTA predicts for Poisson arrivals. |
+| **Little's Law**                   | L − L_q = 0.899290 = measured utilisation                  | The internal bookkeeping is consistent.                                                         |
+| **Carried load**                   | Measured 0.89929 vs. theory ρ(1 − p_K) = 0.89953           | Throughput is consistent with the blocking probability.                                         |
+
+---
+
+## 9. Discussion
+
+**Why is the loss-probability difference larger?** The loss probability is about 5 × 10⁻⁴, so only roughly one packet in 2000 is dropped. A single run with 814 observed drops has a standard error of about √859 ≈ 29 drops, against an expected count of about 859 from the analytical value. The observed difference is about 1.5 standard errors, so it is consistent with random variation. Rare events need longer runs or more replications to estimate precisely.
+
+**Why do the occupancy metrics agree so closely?** Occupancy is a time average over millions of arrivals and departures, so its estimator converges quickly. The relative error in L and L_q is below 0.5%.
+
+**Why is the measured utilisation below 0.9?** The offered load is ρ = λ/μ = 0.9, but dropped packets never use the link. The carried load is ρ(1 − p_K) ≈ 0.8995, which matches the measured value.
+
+**Practical implication.** At ρ = 0.9 with a 50-packet buffer, the link is busy about 90% of the time and the queue is usually long. Under these conditions, queueing delay dominates the end-to-end latency, and the loss probability is small only because the buffer is large relative to the offered load.
+
+---
+
+## 10. Limitations and Future Work
+
+- **Single replication.** Results come from one RNG run (seed 12345, run 1). Future work should run multiple independent replications and report confidence intervals, for example with a 95% interval across 10 runs.
+- **Single bottleneck.** The model has one queue and one link. Extending it to multi-hop topologies or TCP traffic would test the model under more realistic conditions.
+- **Fixed buffer size.** Varying K (for example 10, 50, 100) would show how buffer size trades loss against queueing delay.
+- **Sweep over load.** Running ρ from 0.5 to 1.2 would show how the blocking probability grows as the link saturates.
+
+---
+
+## 11. Project Structure
 
 ```text
 .
-├── README.md
-├── poisson-bottleneck.cc
-├── analytical-calculations.md
+├── README.md                      # This file
+├── poisson-bottleneck.cc          # NS-3 simulation source code
+├── analytical-calculations.md     # Derivation of M/M/1/K metrics
 └── results/
-    ├── parameters.png
-    └── results-comparison.png
+    ├── parameters.png             # Simulation parameters (terminal output)
+    └── results-comparison.png     # Analytical vs. simulation comparison
 ```
 
-* [`poisson-bottleneck.cc`](poisson-bottleneck.cc) — NS-3 simulation source code
-* [`analytical-calculations.md`](analytical-calculations.md) — Analytical calculations
-* `results/parameters.png` — Simulation parameters
-* `results/results-comparison.png` — Analytical and simulation results comparison
+---
 
-## Author
+## 12. References
+
+1. L. Kleinrock, _Queueing Systems, Volume 1: Theory_, Wiley, 1975. (M/M/1/K derivation and Little's Law.)
+2. R. W. Wolff, "Poisson Arrivals See Time Averages," _Operations Research_, 30(2), 1982. (PASTA.)
+3. J. D. C. Little, "A Proof for the Queuing Formula: L = λW," _Operations Research_, 9(3), 1961.
+4. NS-3 Project, _ns-3 Documentation_, https://www.nsnam.org/documentation/
+
+---
+
+## 13. Author
 
 **Saqib Hussain**
-
 BS Information Technology, Ghazi University, Dera Ghazi Khan, Pakistan
+Research interests: wireless and mobile networks (5G/6G, IoT), network performance modelling with NS-3, protocol optimisation, dynamic resource allocation
 
-GitHub: [@Saki882](https://github.com/Saki882)
+- LinkedIn: [saqib-hussain-it](https://linkedin.com/in/saqib-hussain-it)
+- Email: saqibhussainit882@gmail.com
